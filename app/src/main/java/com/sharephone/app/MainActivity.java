@@ -211,7 +211,8 @@ public class MainActivity extends AppCompatActivity {
         o.setDesiredBarcodeFormats(ScanOptions.QR_CODE);
         o.setPrompt("Point the camera at the QR code on your PC");
         o.setBeepEnabled(false);
-        o.setOrientationLocked(false);
+        o.setCaptureActivity(PortraitCaptureActivity.class);
+        o.setOrientationLocked(true);
         scanLauncher.launch(o);
     }
 
