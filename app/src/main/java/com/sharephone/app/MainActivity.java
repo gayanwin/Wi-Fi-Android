@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 Intent i = new Intent(this, DownloadService.class);
                 i.putExtra("url", url);
-                i.putExtra("name", URLUtil.guessFileName(url, contentDisposition, mimeType));
+                i.putExtra("name", realFileName(url, contentDisposition, mimeType));
                 i.putExtra("mime", mimeType);
                 i.putExtra("cookie", CookieManager.getInstance().getCookie(url));
                 i.putExtra("ua", userAgent);
@@ -214,6 +214,29 @@ public class MainActivity extends AppCompatActivity {
         o.setCaptureActivity(PortraitCaptureActivity.class);
         o.setOrientationLocked(true);
         scanLauncher.launch(o);
+    }
+
+    /** Use the exact file name sent by the PC (guessFileName can change .srt into .bin). */
+    private static String realFileName(String url, String cd, String mime) {
+        try {
+            if (cd != null) {
+                java.util.regex.Matcher m = java.util.regex.Pattern
+                        .compile("filename\\*\\s*=\\s*UTF-8''([^;]+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(cd);
+                String n = null;
+                if (m.find()) {
+                    n = java.net.URLDecoder.decode(m.group(1).trim().replace("+", "%2B"), "UTF-8");
+                } else {
+                    m = java.util.regex.Pattern.compile("filename\\s*=\\s*\"([^\"]+)\"", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(cd);
+                    if (m.find()) n = m.group(1);
+                }
+                if (n != null) {
+                    n = n.replace('/', '_').replace('\\', '_').trim();
+                    if (n.length() > 0) return n;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return URLUtil.guessFileName(url, cd, mime);
     }
 
     private void handleScanned(String text) {

@@ -80,7 +80,7 @@ public class DownloadService extends Service {
 
         final String url = intent.getStringExtra("url");
         final String name = intent.getStringExtra("name");
-        final String mime = intent.getStringExtra("mime");
+        final String mime = fixMime(name, intent.getStringExtra("mime"));
         final String cookie = intent.getStringExtra("cookie");
         final String ua = intent.getStringExtra("ua");
 
@@ -248,6 +248,25 @@ public class DownloadService extends Service {
     }
 
     // ---------------------------------------------------------------- the download itself
+    /** Unknown types (e.g. .srt) must not stay application/octet-stream, or Android renames the file to .bin */
+    private static String fixMime(String name, String mime) {
+        String m = mime == null ? "" : mime.trim();
+        int semi = m.indexOf(';');
+        if (semi >= 0) m = m.substring(0, semi).trim();
+        if (m.length() == 0 || m.equalsIgnoreCase("application/octet-stream")) {
+            String ext = "";
+            if (name != null) {
+                int dot = name.lastIndexOf('.');
+                if (dot >= 0 && dot < name.length() - 1) ext = name.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
+            }
+            String g = ext.length() == 0 ? null : android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+            if (g != null) m = g;
+            else if (ext.length() > 0) m = "application/x-" + ext;
+            else m = "application/octet-stream";
+        }
+        return m;
+    }
+
     private void download(final String url, final String name, String mime, final String cookie, final String ua) {
         cancelRequested = false;
         ContentResolver cr = getContentResolver();
